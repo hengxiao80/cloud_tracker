@@ -13,11 +13,11 @@ def main():
 
     # Cloudlets
     print( " Gathering cloudlets... " )
-    generate_cloudlets()
+    # generate_cloudlets()
 
     # Clusters
     print( "\n Creating clusters... " )
-    cluster_cloudlets()
+    # cluster_cloudlets()
 
     # Cloud graph
     print( "\n Make graph... " )

@@ -84,7 +84,7 @@ def calc_regions(cluster):
 def output_clouds_at_time(cloud_graphs, cloud_noise, t):
     print('Timestep:', t)
 
-    cluster = {}
+    # cluster = {}
     clusters = {}
     items = ['core', 'condensed', 'plume']
     
@@ -94,8 +94,10 @@ def output_clouds_at_time(cloud_graphs, cloud_noise, t):
         for id in keys:
             key = "%08g|%08g" % (t, id)
 
-            clusters[key] = dict(zip(items, np.array([cluster_dict['%s/%s' % (id, 'core')][...], \
-                cluster_dict['%s/%s' % (id, 'condensed')][...], cluster_dict['%s/%s' % (id, 'plume')][...]])))
+            # clusters[key] = dict(zip(items, np.array([cluster_dict['%s/%s' % (id, 'core')][...], \
+            #     cluster_dict['%s/%s' % (id, 'condensed')][...], cluster_dict['%s/%s' % (id, 'plume')][...]])))
+            clusters[key] = dict(zip(items, [cluster_dict['%s/%s' % (id, 'core')][...], \
+                cluster_dict['%s/%s' % (id, 'condensed')][...], cluster_dict['%s/%s' % (id, 'plume')][...]]))
             # for var in items:
             #     cluster[var] = cluster_dict['%s/%s' % (id, var)][...]
             # clusters[key] = cluster

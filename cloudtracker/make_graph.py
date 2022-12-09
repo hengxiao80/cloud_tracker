@@ -29,7 +29,7 @@ def full_output(cloud_times, cloud_graphs, merges, splits):
             if node in splits:
                 node_events.append('split')
                 
-            info = subgraph.node[node]
+            info = subgraph.nodes[node]
             if info['merge']:
                 node_events.append('merge')
             if info['split']:
@@ -58,6 +58,10 @@ def make_graph():
     merges = {}
     splits = {}
 
+    # calculate the minimum time duration (5 minutes) in timesteps allowed for a cluster that 
+    # has splitting or merging events in its history.
+    t_min = 5*60 / c.dt
+
     for t in range(c.nt):
         with h5py.File('hdf5/clusters_%08g.h5' % t, 'r') as f:
             keys = np.array(list(f.keys()), dtype=int)
@@ -68,11 +72,11 @@ def make_graph():
                 core = len(f['%s/core' % id])
                 condensed = len(f['%s/condensed' % id])
                 plume = len(f['%s/plume' % id])
-                attr_dict = {'merge': m_conns,
-                             'split': s_conns,
-                             'core': core,
-                             'condensed': condensed,
-                             'plume': plume}
+                # attr_dict = {'merge': m_conns,
+                #              'split': s_conns,
+                #              'core': core,
+                #              'condensed': condensed,
+                #              'plume': plume}
 
                 for item in m_conns:
                     node1 = '%08g|%08g' % (t, id)
@@ -95,64 +99,67 @@ def make_graph():
                                        '%08g|%08g' % (t, id))
 
     # Iterate over every cloud in the graph
-    for subgraph in networkx.connected_component_subgraphs(graph):
+    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
+    for subgraph in s:
         # Find the duration over which the cloud_graph has cloudy points.
         condensed_times = set()
         for node in subgraph:
-            if subgraph.node[node]['condensed'] > 0:
+            if subgraph.nodes[node]['condensed'] > 0:
                 condensed_times.add(int(node[:8]))
 
         plume_times = set()
         for node in subgraph:
-            if subgraph.node[node]['plume'] > 0:
+            if subgraph.nodes[node]['plume'] > 0:
                 plume_times.add(int(node[:8]))
 
         # If cloud exists for less than 5 minutes, check if it has split events
         # If it has split events, remove them and reconnect the cloud
-        if (len(condensed_times) < 5):
+        if (len(condensed_times) < t_min):
             for node in subgraph:
-                if subgraph.node[node]['split']:
-                    item = subgraph.node[node]['split'].pop()
+                if subgraph.nodes[node]['split']:
+                    item = subgraph.nodes[node]['split'].pop()
                     t = int(node[:8]) 
                     graph.add_edge(node, '%08g|%08g' % (t, item))
 
-        if (len(plume_times) < 5):
+        if (len(plume_times) < t_min):
             for node in subgraph:
-                if subgraph.node[node]['split']:
-                    item = subgraph.node[node]['split'].pop()
+                if subgraph.nodes[node]['split']:
+                    item = subgraph.nodes[node]['split'].pop()
                     t = int(node[:8]) 
                     graph.add_edge(node, '%08g|%08g' % (t, item))
 
-    for subgraph in networkx.connected_component_subgraphs(graph):
+    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
+    for subgraph in s:
         # Find the duration over which the cloud_graph has cloudy points.
         condensed_times = set()
         for node in subgraph:
-            if subgraph.node[node]['condensed'] > 0:
+            if subgraph.nodes[node]['condensed'] > 0:
                 condensed_times.add(int(node[:8]))
 
         plume_times = set()
         for node in subgraph:
-            if subgraph.node[node]['plume'] > 0:
+            if subgraph.nodes[node]['plume'] > 0:
                 plume_times.add(int(node[:8]))
 
         # If a cloud exists less than 5 minutes, check for merge events
-        if (len(condensed_times) < 5):
+        if (len(condensed_times) < t_min):
             for node in subgraph:
-                if subgraph.node[node]['merge']:
-                    item = subgraph.node[node]['merge'].pop()
+                if subgraph.nodes[node]['merge']:
+                    item = subgraph.nodes[node]['merge'].pop()
                     t = int(node[:8])
                     graph.add_edge(node, '%08g|%08g' % (t-1, item))
 
-        if (len(plume_times) < 5):
+        if (len(plume_times) < t_min):
             for node in subgraph:
-                if subgraph.node[node]['merge']:
-                    item = subgraph.node[node]['merge'].pop()
+                if subgraph.nodes[node]['merge']:
+                    item = subgraph.nodes[node]['merge'].pop()
                     t = int(node[:8])
                     graph.add_edge(node, '%08g|%08g' % (t-1, item))
 
     cloud_graphs = []
     cloud_noise = []
-    for subgraph in networkx.connected_component_subgraphs(graph):
+    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
+    for subgraph in s:
         plume_time = set()
         condensed_time = set()
         core_time = set()
@@ -161,18 +168,18 @@ def make_graph():
         condensed_volume = 0
         core_volume = 0
 
-        for node in subgraph.nodes():
-            condensed_vol = subgraph.node[node]['condensed'] 
+        for node in subgraph:
+            condensed_vol = subgraph.nodes[node]['condensed'] 
             if condensed_vol > 0:
                 condensed_volume = condensed_volume + condensed_vol
                 condensed_time.add(int(node[:8]))
 
-            core_vol = subgraph.node[node]['core'] 
+            core_vol = subgraph.nodes[node]['core'] 
             if core_vol > 0:
                 core_volume = core_volume + core_vol
                 core_time.add(int(node[:8]))
 
-            plume_vol = subgraph.node[node]['plume']
+            plume_vol = subgraph.nodes[node]['plume']
             if plume_vol > 0:
                 plume_volume = plume_volume + plume_vol
                 plume_time.add(int(node[:8]))

@@ -8,28 +8,28 @@ def main(case_name):
         json_dict = {}
         json_dict['config'] = {}
 
-        stat_file = 'BOMEX_256x256x128_25m_25m_1s_stat.nc'
-        location = '/newtera/loh/data/BOMEX'
+        stat_file = 'BOMEX_r1.nc'
+        location = '/global/homes/x/xiao169/cscratch/bomex_r1n_256_75L'
 
         json_dict['case_name'] = case_name
         json_dict['location'] = location
 
         json_dict['condensed'] = '%s/condensed_entrain' % location
         json_dict['core'] = '%s/core_entrain' % location
-        json_dict['stat_file'] = '%s/%s' % (location, stat_file)
+        json_dict['stat_file'] = '%s/OUT_STAT/%s' % (location, stat_file)
         json_dict['tracking'] = '%s/tracking' % location
-        json_dict['variables'] = '%s/variables' % location
+        json_dict['variables'] = '%s/OUT_3D' % location
 
         # Model parameters
         json_dict['config']['nx'] = 256
         json_dict['config']['ny'] = 256
-        json_dict['config']['nz'] = 128
-        json_dict['config']['nt'] = 180
+        json_dict['config']['nz'] = 75
+        json_dict['config']['nt'] = 241
 
-        json_dict['config']['dx'] = 25
-        json_dict['config']['dy'] = 25
-        json_dict['config']['dz'] = 25
-        json_dict['config']['dt'] = 60
+        json_dict['config']['dx'] = 35
+        json_dict['config']['dy'] = 35
+        json_dict['config']['dz'] = 40 
+        json_dict['config']['dt'] = 30
 
         json_dict['config']['ug'] = -8.
         json_dict['config']['vg'] = 0.

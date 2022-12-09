@@ -21,38 +21,39 @@ def theta_v(p, T, qv, qn, qp):
 
 def generate_tracking(time, file):
     with xr.open_dataset(file) as f:
-        try:
-            f = f.squeeze('time')
-        except:
-            pass
+        # try:
+        #     f = f.squeeze('time')
+        # except:
+        #     pass
         print(f)
 
         print("\t Calculating velocity fields...")
         w_field = f['W'][:]
-        w_field = (w_field + np.roll(w_field, 1, axis=0)) / 2
+        w_field = (w_field + np.roll(w_field, 1, axis=1)) / 2
 
         u_field = f['U'][:]
-        u_field = (u_field + np.roll(u_field, 1, axis=1)) / 2
+        u_field = (u_field + np.roll(u_field, 1, axis=2)) / 2
 
         v_field = f['V'][:]
-        v_field = (v_field + np.roll(v_field, 1, axis=2)) / 2
+        v_field = (v_field + np.roll(v_field, 1, axis=3)) / 2
 
         print("\t Calculating buoynacy fields...")
         qn_field = f['QN'][:] / 1e3
-        thetav_field = theta_v(f['p'][:]*100, f['TABS'][:], 
+        thetav_field = theta_v(f['p']*100, f['TABS'][:], 
                                f['QV'][:] / 1e3, qn_field, 0)
         buoy_field = (thetav_field > 
-                      np.mean(thetav_field, axis=(1,2)))
+                      np.mean(thetav_field, axis=(2,3)))
 
         print("\t Calculating tracer fields...")
         tr_field = np.array(f['TR01'][:])
-        tr_mean = np.mean(tr_field.reshape((len(f.z), len(f.y)*len(f.x))), axis=1)
-        tr_stdev = np.sqrt(tr_field.reshape((len(f.z), len(f.y)*len(f.x))).var(1))
-        tr_min = .05 * np.cumsum(tr_stdev)/(np.arange(len(tr_stdev))+1)
+        tr_mean = np.mean(tr_field, axis=(2,3))
+        tr_stdev = np.std(tr_field, axis=(2,3))
+        tr_min = .05 * np.cumsum(tr_stdev, axis=1)/(np.arange(len(tr_stdev[0,:]))+1)
+        tr_limit = np.maximum(tr_mean+tr_stdev, tr_min)
 
         #---- Dataset for storage 
         print("\t Saving DataArrays...")
-        ds = xr.Dataset(coords= {'z': f.z, 'y':f.y, 'x':f.x})
+        ds = xr.Dataset(coords= {'time': f.time, 'z': f.z, 'y':f.y, 'x':f.x})
         
         ds['u'] = u_field
         ds['v'] = v_field
@@ -60,9 +61,8 @@ def generate_tracking(time, file):
     
         ds['core'] = (w_field > 0.) & (buoy_field > 0.) & (qn_field > 0)
         ds['condensed'] = (qn_field > 0)
-        ds['plume'] = xr.DataArray(tr_field > 
-                np.max(np.array([tr_mean + tr_stdev, tr_min]), 0)[:, None, None], 
-                dims=['z', 'y', 'x'])
+        ds['plume'] = xr.DataArray(tr_field > tr_limit[:, :, None, None], 
+            dims=['time', 'z', 'y', 'x'])
 
         # Flag for netCDF compression (very effective for large, sparse arrays)
         encoding = {}
