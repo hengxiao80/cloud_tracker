@@ -60,7 +60,7 @@ def make_graph():
 
     # calculate the minimum time duration (5 minutes) in timesteps allowed for a cluster that 
     # has splitting or merging events in its history.
-    t_min = 5*60 / c.dt
+    t_min = 5.*60. / c.dt
 
     for t in range(c.nt):
         with h5py.File('hdf5/clusters_%08g.h5' % t, 'r') as f:
@@ -78,14 +78,14 @@ def make_graph():
                 #              'condensed': condensed,
                 #              'plume': plume}
 
-                for item in m_conns:
-                    node1 = '%08g|%08g' % (t, id)
-                    node2 = '%08g|%08g' % (t-1, item)
-                    merges[node2] = node1
-                for item in s_conns:
-                    node1 = '%08g|%08g' % (t, id)
-                    node2 = '%08g|%08g' % (t, item)
-                    splits[node2] = node1            
+                # for item in m_conns:
+                #     node1 = '%08g|%08g' % (t, id)
+                #     node2 = '%08g|%08g' % (t-1, item)
+                #     merges[node2] = node1
+                # for item in s_conns:
+                #     node1 = '%08g|%08g' % (t, id)
+                #     node2 = '%08g|%08g' % (t, item)
+                #     splits[node2] = node1            
             
                 # Construct a graph of the cloudlet connections
                 graph.add_node('%08g|%08g' % (t, id), merge= m_conns,
@@ -99,7 +99,7 @@ def make_graph():
                                        '%08g|%08g' % (t, id))
 
     # Iterate over every cloud in the graph
-    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
+    s = [graph.subgraph(c) for c in networkx.connected_components(graph)]
     for subgraph in s:
         # Find the duration over which the cloud_graph has cloudy points.
         condensed_times = set()
@@ -128,7 +128,7 @@ def make_graph():
                     t = int(node[:8]) 
                     graph.add_edge(node, '%08g|%08g' % (t, item))
 
-    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
+    s = [graph.subgraph(c) for c in networkx.connected_components(graph)]
     for subgraph in s:
         # Find the duration over which the cloud_graph has cloudy points.
         condensed_times = set()
@@ -156,9 +156,18 @@ def make_graph():
                     t = int(node[:8])
                     graph.add_edge(node, '%08g|%08g' % (t-1, item))
 
+    for node in graph.nodes(data=True):
+        t = int(node[:8])
+        for item in node['merge']:
+            node2 = '%08g|%08g' % (t-1, item)
+            merges[node2] = node
+        for item in node['split']:
+            node2 = '%08g|%08g' % (t, item)
+            splits[node2] = node     
+
     cloud_graphs = []
     cloud_noise = []
-    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
+    s = [graph.subgraph(c) for c in networkx.connected_components(graph)]
     for subgraph in s:
         plume_time = set()
         condensed_time = set()
