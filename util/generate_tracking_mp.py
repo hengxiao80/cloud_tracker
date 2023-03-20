@@ -39,17 +39,29 @@ def generate_tracking(time, file):
 
         print("\t Calculating buoynacy fields...")
         qn_field = f['QN'][:] / 1e3
+        qv_field = f['QV'][:] / 1e3
         thetav_field = theta_v(f['p']*100, f['TABS'][:], 
-                               f['QV'][:] / 1e3, qn_field, 0)
+                               qv_field, qn_field, 0)
         buoy_field = (thetav_field > 
                       np.mean(thetav_field, axis=(2,3)))
 
+        print("\t Calculating normalized total moisture fields...")
+        qt_field = qn_field + qv_field  
+        qt_mean = np.mean(qt_field, axis=(2,3))
+        qt_stdev = np.std(qt_field, axis=(2,3))
+        qt_min = .05 * np.cumsum(qt_stdev, axis=1)/(np.arange(len(qt_stdev[0,:]))+1)
+        qt_limit = np.maximum(qt_mean + qt_stdev, qt_min)
+        print(type(qt_limit))
+        print(qt_limit.shape)
+
         print("\t Calculating tracer fields...")
-        tr_field = np.array(f['TR01'][:])
+        tr_field = f['TR01'][:]
         tr_mean = np.mean(tr_field, axis=(2,3))
         tr_stdev = np.std(tr_field, axis=(2,3))
         tr_min = .05 * np.cumsum(tr_stdev, axis=1)/(np.arange(len(tr_stdev[0,:]))+1)
         tr_limit = np.maximum(tr_mean+tr_stdev, tr_min)
+        print(type(tr_limit))
+        print(tr_limit.shape)
 
         #---- Dataset for storage 
         print("\t Saving DataArrays...")
@@ -60,10 +72,12 @@ def generate_tracking(time, file):
         ds['w'] = w_field
     
         # ds['core'] = (w_field > 0.) & (buoy_field > 0.) & (qn_field > 0)
-        ds['core'] = (w_field > 0.) & buoy_field & (qn_field > 0)
-        ds['condensed'] = (qn_field > 0)
-        ds['plume'] = xr.DataArray(tr_field > tr_limit[:, :, None, None], 
-            dims=['time', 'z', 'y', 'x'])
+        ds['core'] = (w_field > 0.) & buoy_field & (qt_field > qt_limit) & (tr_field > tr_limit)
+        ds['condensed'] = (qt_field > qt_limit) & (tr_field > tr_limit)
+        ds['plume'] = (tr_field > tr_limit)
+        # ds['core'] = xr.DataArray((w_field > 0.) & buoy_field & (qt_field > qt_limit[:,:,np.newaxis,np.newaxis]), dims=['time', 'z', 'y', 'x'])
+        # ds['condensed'] = xr.DataArray((qt_field > qt_limit[:,:,np.newaxis,np.newaxis]), dims=['time', 'z', 'y', 'x'])
+        # ds['plume'] = xr.DataArray(tr_field > tr_limit[:, :, np.newaxis, np.newaxis], dims=['time', 'z', 'y', 'x'])
 
         # Flag for netCDF compression (very effective for large, sparse arrays)
         encoding = {}

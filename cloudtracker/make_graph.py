@@ -11,13 +11,25 @@ from .load_config import c
 
 full_output=True
 
-def full_output(cloud_times, cloud_graphs, merges, splits):
-    cloud_times = tuple(cloud_times)
+# def full_output(cloud_times, cloud_graphs, merges, splits):
+def full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits):
+    # cloud_times = tuple(cloud_times)
 
     n = 0
     clouds = {}
-    for subgraph in cloud_graphs:
-        events = {'has_condensed': False, 'has_core': False}
+    # for subgraph in cloud_graphs:
+    for cloud_volume, cloud_time, subgraph in zip(cloud_volumes, cloud_times, cloud_graphs):
+        # events = {'has_condensed': False, 'has_core': False}
+        events = {
+                  'plume_volume': cloud_volume[0],
+                  'cloud_volume': cloud_volume[1],
+                  'core_volume': cloud_volume[2],
+                  'plume_time': len(cloud_time[0]),
+                  'condense_time': len(cloud_time[1]),
+                  'core_time': len(cloud_time[2]),
+                  'has_condensed': False,
+                  'has_core': False,
+                 }
         for node in subgraph:
             node_events = []
             t = int(node[:8])
@@ -156,12 +168,12 @@ def make_graph():
                     t = int(node[:8])
                     graph.add_edge(node, '%08g|%08g' % (t-1, item))
 
-    for node in graph.nodes(data=True):
+    for node in graph:
         t = int(node[:8])
-        for item in node['merge']:
+        for item in graph.nodes[node]['merge']:
             node2 = '%08g|%08g' % (t-1, item)
             merges[node2] = node
-        for item in node['split']:
+        for item in graph.nodes[node]['split']:
             node2 = '%08g|%08g' % (t, item)
             splits[node2] = node     
 
@@ -202,13 +214,16 @@ def make_graph():
             condensed_time.sort()
             core_time = list(core_time)
             core_time.sort()
-            cloud_graphs.append((condensed_volume, subgraph, \
+            cloud_graphs.append((plume_volume, condensed_volume, core_volume, subgraph, \
                                 plume_time, condensed_time, core_time))
             
-    cloud_graphs.sort(key=lambda key:keys[0])
+    # cloud_graphs.sort(key=lambda x:x[0])
+    cloud_graphs.sort(key=lambda x:x[1])
     cloud_graphs.reverse()
-    cloud_times = [item[2:] for item in cloud_graphs] 
-    cloud_graphs = [item[1] for item in cloud_graphs]
+    cloud_volumes = [item[0:3] for item in cloud_graphs] 
+    cloud_times = [item[4:] for item in cloud_graphs] 
+    cloud_graphs = [item[3] for item in cloud_graphs]
     
-    if full_output: full_output(cloud_times, cloud_graphs, merges, splits)
+    if full_output: full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits)
+    # if full_output: full_output(cloud_times, cloud_graphs, merges, splits)
     return cloud_graphs, cloud_noise

@@ -225,7 +225,7 @@ def load_data(time, ds):
 
 def generate_cloudlets():
     # ds = xarray.open_mfdataset((("./data/*.nc")), concat_dim="time")
-    ds = xarray.open_mfdataset("./data/*.nc")
+    ds = xarray.open_mfdataset("data/*.nc")
 
     for time in range(c.nt):
         core, condensed, plume, u, v, w = load_data(time, ds.isel(time=time))
