@@ -17,9 +17,11 @@ def full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits):
 
     n = 0
     clouds = {}
+    cloud_nodes = {}
     # for subgraph in cloud_graphs:
     for cloud_volume, cloud_time, subgraph in zip(cloud_volumes, cloud_times, cloud_graphs):
         # events = {'has_condensed': False, 'has_core': False}
+        nodes = {}
         events = {
                   'plume_volume': cloud_volume[0],
                   'cloud_volume': cloud_volume[1],
@@ -30,6 +32,7 @@ def full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits):
                   'has_condensed': False,
                   'has_core': False,
                  }
+
         for node in subgraph:
             node_events = []
             t = int(node[:8])
@@ -55,11 +58,19 @@ def full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits):
             else:
                 events[t] = node_events[:]
 
+            if t in nodes:
+                nodes[t].append(int(node[9:]))
+            else:
+                nodes[t] = [int(node[9:])]
+
+        cloud_nodes[n] = nodes 
         clouds[n] = events
         n = n + 1
 
     with open('hdf5/events.json', 'w') as f:
         json.dump(clouds, f, indent=4)
+    with open('hdf5/cloud_nodes.json', 'w') as f:
+        json.dump(cloud_nodes, f, indent=4)
 
 
 #---------------------
