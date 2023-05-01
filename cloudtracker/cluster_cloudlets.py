@@ -220,8 +220,8 @@ def associate_cloudlets_with_previous_clusters(cloudlets, old_clusters):
             for conn in conns:
                 if not old_clusters[conn[1]].has_condensed():
                     if max_conn > -1:
-                        # back_conns.add(max_conn)
-                        back_conns.add(conn[1])
+                        back_conns.add(max_conn)
+                        # back_conns.add(conn[1])
                     else:
                         max_conn = conn[1]
         elif cloudlet.overlap['plume->plume']:
@@ -230,8 +230,8 @@ def associate_cloudlets_with_previous_clusters(cloudlets, old_clusters):
                 for conn in conns:
                     if not old_clusters[conn[1]].has_condensed():
                         if max_conn > -1:
-                            # back_conns.add(max_conn)
-                            back_conns.add(conn[1])
+                            back_conns.add(max_conn)
+                            # back_conns.add(conn[1])
                         else:
                             max_conn = conn[1]
  
