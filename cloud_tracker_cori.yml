@@ -1,4 +1,4 @@
-name: cloud_tracker_cori
+name: cloud_tracker
 channels:
   - conda-forge
   - defaults
@@ -167,4 +167,3 @@ dependencies:
   - zlib=1.2.13=h166bdaf_4
   - zstandard=0.19.0=py38h5945529_1
   - zstd=1.5.2=h6239696_4
-prefix: /global/homes/x/xiao169/.conda/envs/my38/envs/cloud_tracker_cori

@@ -18,10 +18,12 @@ def full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits):
     n = 0
     clouds = {}
     cloud_nodes = {}
+    cloud_nodes_w_cloudlets = {}
     # for subgraph in cloud_graphs:
     for cloud_volume, cloud_time, subgraph in zip(cloud_volumes, cloud_times, cloud_graphs):
         # events = {'has_condensed': False, 'has_core': False}
         nodes = {}
+        nodes_w_cloudlets = {}
         events = {
                   'plume_volume': cloud_volume[0],
                   'cloud_volume': cloud_volume[1],
@@ -58,11 +60,18 @@ def full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits):
             else:
                 events[t] = node_events[:]
 
+            cloudlet_list = [int(cldt) for cldt in info['cloudlets']]
+            if t in nodes_w_cloudlets:
+                nodes_w_cloudlets[t][int(node[9:])] = cloudlet_list
+            else:
+                nodes_w_cloudlets[t] = {int(node[9:]):cloudlet_list}
+
             if t in nodes:
                 nodes[t].append(int(node[9:]))
             else:
                 nodes[t] = [int(node[9:])]
 
+        cloud_nodes_w_cloudlets[n] = nodes_w_cloudlets
         cloud_nodes[n] = nodes 
         clouds[n] = events
         n = n + 1
@@ -71,6 +80,8 @@ def full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits):
         json.dump(clouds, f, indent=4)
     with open('hdf5/cloud_nodes.json', 'w') as f:
         json.dump(cloud_nodes, f, indent=4)
+    with open('hdf5/cloud_nodes_w_cloudlets.json', 'w') as f:
+        json.dump(cloud_nodes_w_cloudlets, f, indent=4)
 
 
 #---------------------
@@ -95,6 +106,7 @@ def make_graph():
                 core = len(f['%s/core' % id])
                 condensed = len(f['%s/condensed' % id])
                 plume = len(f['%s/plume' % id])
+                cloudlets = set(f['%s/cloudlet_ids' % id][...])
                 # attr_dict = {'merge': m_conns,
                 #              'split': s_conns,
                 #              'core': core,
@@ -111,11 +123,13 @@ def make_graph():
                 #     splits[node2] = node1            
             
                 # Construct a graph of the cloudlet connections
-                graph.add_node('%08g|%08g' % (t, id), merge= m_conns,
-                                                     split= s_conns,
-                                                     core= core,
-                                                     condensed= condensed,
-                                                     plume= plume)
+                graph.add_node('%08g|%08g' % (t, id), merge = m_conns,
+                                                     split = s_conns,
+                                                     core = core,
+                                                     condensed = condensed,
+                                                     plume = plume,
+                                                     cloudlets = cloudlets,
+                                                     )
                 if f['%s/past_connections' % id]:
                     for item in f['%s/past_connections' % id]:
                         graph.add_edge('%08g|%08g' % (t-1, item),

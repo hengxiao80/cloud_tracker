@@ -361,8 +361,16 @@ def load_cloudlets(t):
 
     return result
 
+def save_cloudlets(cloudlets, t):
+    with h5py.File('hdf5/filtered_cloudlets_%08g.h5' % t, "w") as f:
+        for cloudlet in cloudlets:
+            grp = f.create_group(str(cloudlet.id))
+            for item in ['core', 'condensed', 'plume']:
+                dset = grp.create_dataset(item, data=np.asarray(cloudlet.masks[item]))
+            dset = grp.create_dataset('cluster_id', data=cloudlet.cluster.id, dtype=np.int)
+    return
+
 def save_clusters(clusters, t):
-    new_clusters = {}
 
     with h5py.File('hdf5/clusters_%08g.h5' % t, "w") as f:
         for id, clust in clusters.items():
@@ -382,12 +390,18 @@ def save_clusters(clusters, t):
             grp.create_dataset('condensed', data=clust.condensed_mask())
             grp.create_dataset('plume', data=clust.plume_mask())
 
+            cloudlet_ids = np.asarray([cloudlet.id for cloudlet in clust.cloudlets])
+            grp.create_dataset('cloudlet_ids', data=cloudlet_ids)
+
+    return
+
 def cluster_cloudlets():
     print(" \tcluster cloudlets; time step: 0 ")
     cloudlets = load_cloudlets(0)    
     make_spatial_cloudlet_connections(cloudlets)
     new_clusters = create_new_clusters(cloudlets, {}, 0)
     print(" \tFound %d clusters\n " % len(new_clusters))
+    save_cloudlets(cloudlets, 0)
     save_clusters(new_clusters, 0)
     
     for t in range(1, c.nt):
@@ -404,6 +418,7 @@ def cluster_cloudlets():
         new_clusters = make_clusters(cloudlets, old_clusters)
         print(" \tFound %d clusters\n " % len(new_clusters))
 
+        save_cloudlets(cloudlets, t)
         save_clusters(new_clusters, t)
 
 if __name__ == "__main__":
