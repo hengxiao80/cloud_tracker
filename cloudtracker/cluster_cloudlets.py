@@ -339,7 +339,7 @@ def load_cloudlets(t):
         result = []
         n = 0
 
-        ids = np.array(list(cloudlets.keys()), dtype=int).sort()
+        # ids = np.array(list(cloudlets.keys()), dtype=int).sort()
 
         with ThreadPoolExecutor() as executor:
             cloudlet = executor.map(filter_cloudlets, \
@@ -390,8 +390,12 @@ def save_clusters(clusters, t):
             grp.create_dataset('condensed', data=clust.condensed_mask())
             grp.create_dataset('plume', data=clust.plume_mask())
 
-            cloudlet_ids = np.asarray([cloudlet.id for cloudlet in clust.cloudlets])
-            grp.create_dataset('cloudlet_ids', data=cloudlet_ids)
+            allclet_ids = np.asarray([cloudlet.id for cloudlet in clust.cloudlets])
+            condclet_ids = np.asarray([cloudlet.id for cloudlet in clust.cloudlets if len(cloudlet.masks['condensed']) > 0])
+            coreclet_ids = np.asarray([cloudlet.id for cloudlet in clust.cloudlets if len(cloudlet.masks['core']) > 0])
+            grp.create_dataset('cloudlet_ids', data=allclet_ids)
+            grp.create_dataset('core_cloudlet_ids', data=coreclet_ids)
+            grp.create_dataset('cond_cloudlet_ids', data=condclet_ids)
 
     return
 
