@@ -162,7 +162,7 @@ def make_graph():
                                        '%08g|%08g' % (t, id))
 
     # Iterate over every cloud in the graph
-    s = [graph.subgraph(c) for c in networkx.connected_components(graph)]
+    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
     for subgraph in s:
         # Find the duration over which the cloud_graph has cloudy points.
         condensed_times = set()
@@ -191,7 +191,7 @@ def make_graph():
                     t = int(node[:8]) 
                     graph.add_edge(node, '%08g|%08g' % (t, item))
 
-    s = [graph.subgraph(c) for c in networkx.connected_components(graph)]
+    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
     for subgraph in s:
         # Find the duration over which the cloud_graph has cloudy points.
         condensed_times = set()
@@ -230,7 +230,7 @@ def make_graph():
 
     cloud_graphs = []
     cloud_noise = []
-    s = [graph.subgraph(c) for c in networkx.connected_components(graph)]
+    s = [graph.subgraph(c).copy() for c in networkx.connected_components(graph)]
     for subgraph in s:
         plume_time = set()
         condensed_time = set()
