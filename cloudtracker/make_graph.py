@@ -92,6 +92,8 @@ def full_output(cloud_volumes, cloud_times, cloud_graphs, merges, splits):
         cloud_nodes_w_cond_cloudlets[n] = nodes_w_cond_cloudlets
         cloud_nodes[n] = nodes 
         clouds[n] = events
+        with open(f'hdf5/cloud_graph_{n:08d}.pkl', 'wb') as f:
+            pickle.dump(subgraph, f)
         n = n + 1
 
     with open('hdf5/events.json', 'w') as f:
@@ -117,6 +119,7 @@ def make_graph():
     # calculate the minimum time duration (5 minutes) in timesteps allowed for a cluster that 
     # has splitting or merging events in its history.
     t_min = 5.*60. / c.dt
+    # t_min = 2.5*60. / c.dt
 
     for t in range(c.nt):
         with h5py.File('hdf5/clusters_%08g.h5' % t, 'r') as f:
